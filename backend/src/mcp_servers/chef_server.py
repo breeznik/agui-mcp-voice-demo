@@ -248,6 +248,51 @@ async def generate_shopping_list(
 
 
 @mcp.tool()
+async def create_recipe(
+    name: str,
+    ingredients: list[str],
+    steps: list[str],
+    prep_min: int = 10,
+    cook_min: int = 20,
+    cuisine: str = "",
+    dietary: list[str] | None = None,
+    servings: int = 2,
+) -> dict:
+    """
+    Create and display a custom recipe composed by the chef AI.
+
+    Use this when search_recipes returns no results — compose a recipe from
+    your own culinary knowledge and call this tool to display it as a card.
+
+    Parameters
+    ----------
+    name        : Recipe name (e.g. "Vegan Cacio e Pepe")
+    ingredients : List of ingredient strings (e.g. ["200g spaghetti", "2 tbsp olive oil"])
+    steps       : List of instruction strings in order
+    prep_min    : Preparation time in minutes
+    cook_min    : Cooking time in minutes
+    cuisine     : Cuisine style (e.g. "Italian")
+    dietary     : Dietary tags (e.g. ["vegan", "gluten-free"])
+    servings    : Number of servings
+    """
+    import uuid
+    recipe_id = f"C-{uuid.uuid4().hex[:6].upper()}"
+    recipe = {
+        "id": recipe_id,
+        "name": name,
+        "cuisine": cuisine,
+        "dietary": dietary or [],
+        "prep_min": prep_min,
+        "cook_min": cook_min,
+        "servings": servings,
+        "ingredients": ingredients,
+        "steps": steps,
+        "generated": True,
+    }
+    return {"results": [recipe], "total_found": 1}
+
+
+@mcp.tool()
 async def save_recipe(recipe_id: str, thread_id: str = "default") -> dict:
     """
     Save a recipe to the user's personal cookbook.

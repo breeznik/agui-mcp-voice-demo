@@ -1,7 +1,18 @@
 import { GenUICard } from '../GenUICard'
 
 export function RecipeCard({ data }) {
-    const { title, difficulty, time_min, ingredients, steps } = data
+    // Normalize: search_recipes returns {results: [{id, name, prep_min, cook_min, ingredients, steps, ...}]}
+    // Return null when search returned no results — agent text already explains the situation
+    if (data.results && data.results.length === 0) return null
+    // Pick the first result if present, otherwise treat data as a single recipe object
+    const recipe = (data.results && data.results.length > 0) ? data.results[0] : data
+    const title = recipe.title || recipe.name || ''
+    const difficulty = recipe.difficulty || (
+        (recipe.cook_min || 0) > 25 ? 'hard' : (recipe.cook_min || 0) > 15 ? 'medium' : 'easy'
+    )
+    const time_min = recipe.time_min || ((recipe.prep_min || 0) + (recipe.cook_min || 0))
+    const ingredients = recipe.ingredients || []
+    const steps = recipe.steps || []
     return (
         <GenUICard id={`recipe-${title}`}>
             <div style={{ marginBottom: '24px' }}>
@@ -30,7 +41,7 @@ export function RecipeCard({ data }) {
                         Ingredients
                     </h4>
                     <ul style={{ listStyleType: 'none', padding: 0, margin: 0, fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {ingredients.map((ing, idx) => (
+                        {(ingredients || []).map((ing, idx) => (
                             <li key={idx} style={{ paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                 {ing}
                             </li>
@@ -44,7 +55,7 @@ export function RecipeCard({ data }) {
                         Instructions
                     </h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {steps.map((step, idx) => (
+                        {(steps || []).map((step, idx) => (
                             <div key={idx} style={{ display: 'flex', gap: '12px', fontSize: '15px' }}>
                                 <div style={{
                                     color: 'var(--accent-sage)',
@@ -76,7 +87,7 @@ export function MealPlanCard({ data }) {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {days.map((day, dIdx) => (
+                {(days || []).map((day, dIdx) => (
                     <div key={dIdx} style={{
                         background: 'rgba(255,255,255,0.02)',
                         borderRadius: '8px',
@@ -93,15 +104,15 @@ export function MealPlanCard({ data }) {
                         <div className="grid-3-col" style={{ gap: '16px' }}>
                             <div>
                                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>BREAKFAST</div>
-                                <div style={{ fontSize: '14px' }}>{day.meals.breakfast}</div>
+                                <div style={{ fontSize: '14px' }}>{day.breakfast || day.meals?.breakfast}</div>
                             </div>
                             <div>
                                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>LUNCH</div>
-                                <div style={{ fontSize: '14px' }}>{day.meals.lunch}</div>
+                                <div style={{ fontSize: '14px' }}>{day.lunch || day.meals?.lunch}</div>
                             </div>
                             <div>
                                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>DINNER</div>
-                                <div style={{ fontSize: '14px' }}>{day.meals.dinner}</div>
+                                <div style={{ fontSize: '14px' }}>{day.dinner || day.meals?.dinner}</div>
                             </div>
                         </div>
                     </div>
@@ -112,7 +123,10 @@ export function MealPlanCard({ data }) {
 }
 
 export function NutritionCard({ data }) {
-    const { recipe_name, calories, protein_g, carbs_g, fat_g, fiber_g } = data
+    // Normalize: get_nutritional_info returns {recipe: "name", ...} not recipe_name; no fiber_g
+    const { calories, protein_g, carbs_g, fat_g } = data
+    const recipe_name = data.recipe_name || data.recipe || ''
+    const fiber_g = data.fiber_g || 0
 
     const widthPct = (val, max) => `${Math.min((val / max) * 100, 100)}%`
 
@@ -159,7 +173,12 @@ export function NutritionCard({ data }) {
 }
 
 export function ShoppingListCard({ data }) {
-    const { shopping_list } = data
+    // Normalize: generate_shopping_list returns {shopping_list: {"Produce": [...], ...}} (dict)
+    // but card iterates as array [{category, items}]
+    const rawList = data.shopping_list
+    const shopping_list = Array.isArray(rawList)
+        ? rawList
+        : Object.entries(rawList || {}).map(([category, items]) => ({ category, items }))
     return (
         <GenUICard id="shopping-list">
             <div style={{ marginBottom: '20px', fontSize: '18px', fontWeight: 500 }}>
@@ -183,7 +202,7 @@ export function ShoppingListCard({ data }) {
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {category.items.map((item, id) => (
+                            {(category.items || []).map((item, id) => (
                                 <label key={id} style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
                                     <input type="checkbox" style={{
                                         width: '16px', height: '16px', borderRadius: '4px', border: '1px solid var(--text-muted)'

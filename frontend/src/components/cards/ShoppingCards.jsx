@@ -2,7 +2,9 @@ import { GenUICard } from '../GenUICard'
 import { motion } from 'framer-motion'
 
 export function ProductCard({ data }) {
-    const { products, category } = data
+    // Normalize: search_products returns {results: [...]} but card expects {products: [...]}
+    const products = data.products || data.results || []
+    const category = data.category || data.query || ''
     return (
         <GenUICard id={`products-${category}`}>
             <div style={{ marginBottom: '16px', fontSize: '18px', fontWeight: 500 }}>
@@ -11,7 +13,7 @@ export function ProductCard({ data }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                 {products.map(p => (
-                    <div key={p.product_id} style={{
+                    <div key={p.product_id || p.id} style={{
                         display: 'flex',
                         flexDirection: 'column',
                         padding: '16px',
@@ -44,7 +46,7 @@ export function ProductCard({ data }) {
                                     ${p.price}
                                 </span>
                                 <span style={{ color: 'var(--accent-amber)', fontSize: '10px' }}>
-                                    {'★'.repeat(Math.round(p.rating))}
+                                    {'★'.repeat(Math.round(p.rating || 0))}
                                 </span>
                             </div>
                         </div>
@@ -90,7 +92,11 @@ export function ProductCard({ data }) {
 }
 
 export function CartCard({ data }) {
-    const { items, item_count, total } = data
+    // Normalize: backend returns {cart: [...]} but card expects {items: [...]}
+    // Item fields: backend uses price (unit), card expects unit_price + subtotal
+    const items = data.items || data.cart || []
+    const item_count = data.item_count ?? items.length
+    const total = data.total || 0
     return (
         <GenUICard id={`cart-${total}`}>
             <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -99,16 +105,16 @@ export function CartCard({ data }) {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
-                {items.map(item => (
+                {(items || []).map(item => (
                     <div key={item.product_id} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                         <div>
                             <div style={{ fontSize: '15px', fontWeight: 500 }}>{item.name}</div>
                             <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '4px' }}>
-                                {item.quantity} × ${item.unit_price.toFixed(2)}
+                                {item.quantity} × ${(item.unit_price || item.price || 0).toFixed(2)}
                             </div>
                         </div>
                         <div style={{ fontSize: '16px', color: 'var(--text-primary)' }}>
-                            ${item.subtotal.toFixed(2)}
+                            ${(item.subtotal || ((item.unit_price || item.price || 0) * item.quantity)).toFixed(2)}
                         </div>
                     </div>
                 ))}
@@ -117,7 +123,7 @@ export function CartCard({ data }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <span style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>Total</span>
                 <span style={{ fontSize: '24px', fontWeight: 600, color: 'var(--accent-rust)' }}>
-                    ${total.toFixed(2)}
+                    ${(total || 0).toFixed(2)}
                 </span>
             </div>
 
@@ -167,7 +173,10 @@ export function CheckoutCard({ data }) {
                     Estimated Delivery
                 </div>
                 <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)' }}>
-                    {new Date(estimated_delivery).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+                    {/* estimated_delivery may be a string like "3–5 business days" or a date */}
+                    {isNaN(Date.parse(estimated_delivery))
+                        ? estimated_delivery
+                        : new Date(estimated_delivery).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
                 </div>
             </div>
 
@@ -176,7 +185,7 @@ export function CheckoutCard({ data }) {
                     Order Summary
                 </div>
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
-                    <span>{items.length} items</span>
+                    <span>{(items || []).length} items</span>
                     <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>${total.toFixed(2)}</span>
                 </div>
             </div>

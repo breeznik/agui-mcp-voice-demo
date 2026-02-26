@@ -37,7 +37,7 @@ export function QuestionCard({ data, onAnswer }) {
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {all_answers.map((ans, idx) => (
+                {(all_answers || []).map((ans, idx) => (
                     <motion.button
                         key={idx}
                         whileHover={{ x: 4, background: 'rgba(255,255,255,0.06)' }}
@@ -119,7 +119,12 @@ export function AnswerCard({ data }) {
 }
 
 export function ScoreboardCard({ data }) {
-    const { score, questions_asked, correct, accuracy_pct, performance_tier } = data
+    // Normalize field names: end_game returns final_score/correct_answers
+    const score = data.score ?? data.final_score ?? 0
+    const correct = data.correct ?? data.correct_answers ?? 0
+    const questions_asked = data.questions_asked ?? 0
+    const accuracy_pct = data.accuracy_pct ?? 0
+    const performance_tier = data.performance_tier ?? ''
 
     return (
         <GenUICard id={`score-${score}`}>
@@ -169,7 +174,7 @@ export function CategoryCard({ data, onAnswer }) {
                 Select a Category
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-                {data.categories.map((cat) => (
+                {(data.categories || []).map((cat) => (
                     <motion.button
                         key={cat.id}
                         onClick={() => onAnswer && onAnswer(`Let's play ${cat.name}`)}

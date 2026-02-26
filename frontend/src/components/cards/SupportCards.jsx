@@ -1,7 +1,11 @@
 import { GenUICard } from '../GenUICard'
 
 export function OrderCard({ data }) {
-    const { order_id, status, items, total, date } = data
+    const { order_id, status } = data
+    // Normalize field names: backend returns placed_on, items use qty not quantity
+    const date = data.date || data.placed_on
+    const items = data.items || []
+    const total = data.total || 0
 
     const statusColors = {
         'delivered': 'var(--accent-sage)',
@@ -41,20 +45,20 @@ export function OrderCard({ data }) {
                 {items.map((item, idx) => (
                     <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
                         <div style={{ display: 'flex', gap: '12px' }}>
-                            <span style={{ color: 'var(--text-muted)' }}>{item.quantity}x</span>
+                            <span style={{ color: 'var(--text-muted)' }}>{item.quantity || item.qty || 1}x</span>
                             <span style={{ color: 'var(--text-secondary)' }}>{item.name}</span>
                         </div>
-                        <span style={{ color: 'var(--text-primary)' }}>${item.price.toFixed(2)}</span>
+                        <span style={{ color: 'var(--text-primary)' }}>${(item.price || 0).toFixed(2)}</span>
                     </div>
                 ))}
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    Placed on {new Date(date).toLocaleDateString()}
+                    Placed on {date ? new Date(date).toLocaleDateString() : '—'}
                 </div>
                 <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    Total: ${total.toFixed(2)}
+                    Total: ${(total || 0).toFixed(2)}
                 </div>
             </div>
         </GenUICard>
@@ -62,7 +66,10 @@ export function OrderCard({ data }) {
 }
 
 export function EscalationCard({ data }) {
-    const { ticket_id, agent_name, issue_summary } = data
+    const { ticket_id } = data
+    // Normalize: backend returns message, not agent_name/issue_summary
+    const agent_name = data.agent_name || 'Support Agent'
+    const issue_summary = data.issue_summary || data.message || ''
     return (
         <GenUICard id={`escalation-${ticket_id}`}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
@@ -147,7 +154,7 @@ export function TicketCard({ data }) {
                         {priority} Priority
                     </span>
                     <span style={{ color: 'var(--text-muted)', alignSelf: 'center' }}>
-                        • {status} • Created on {new Date(created_at).toLocaleDateString()}
+                        • {status} • Created on {created_at ? new Date(created_at).toLocaleDateString() : '—'}
                     </span>
                 </div>
             </div>
@@ -164,22 +171,24 @@ export function KbArticleCard({ data }) {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {results?.map((article) => (
-                    <div key={article.article_id} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {(results || []).map((article, idx) => (
+                    <div key={article.article_id || article.id || idx} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontSize: '16px', fontWeight: 500, color: 'var(--text-primary)' }}>{article.title}</span>
-                            <span style={{
-                                background: 'rgba(255,255,255,0.05)',
-                                color: 'var(--text-muted)',
-                                padding: '2px 8px',
-                                borderRadius: '12px',
-                                fontSize: '11px'
-                            }}>
-                                {article.category}
-                            </span>
+                            {(article.category || article.id) && (
+                                <span style={{
+                                    background: 'rgba(255,255,255,0.05)',
+                                    color: 'var(--text-muted)',
+                                    padding: '2px 8px',
+                                    borderRadius: '12px',
+                                    fontSize: '11px'
+                                }}>
+                                    {article.category || article.id}
+                                </span>
+                            )}
                         </div>
                         <div style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.5 }}>
-                            "{article.snippet}"
+                            "{article.snippet || article.content}"
                         </div>
                     </div>
                 ))}

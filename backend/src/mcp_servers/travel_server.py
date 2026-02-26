@@ -138,7 +138,8 @@ async def get_weather(city: str, date: str) -> dict:
                         "date": item["dt_txt"][:10],
                         "temp_c": round(item["main"]["temp"]),
                         "feels_like_c": round(item["main"]["feels_like"]),
-                        "description": item["weather"][0]["description"].title(),
+                        "condition": item.get("weather", [{}])[0].get("description", "Clear").title(),
+                        "icon": item.get("weather", [{}])[0].get("icon", ""),
                         "humidity_pct": item["main"]["humidity"],
                         "wind_kph": round(item["wind"]["speed"] * 3.6),
                     }
@@ -159,7 +160,7 @@ async def get_weather(city: str, date: str) -> dict:
             "date": (base_date + timedelta(days=i)).strftime("%Y-%m-%d"),
             "temp_c": random.randint(10, 32),
             "feels_like_c": random.randint(8, 30),
-            "description": conditions[random.randint(0, len(conditions) - 1)],
+            "condition": conditions[random.randint(0, len(conditions) - 1)],
             "humidity_pct": random.randint(40, 85),
             "wind_kph": random.randint(5, 40),
         })

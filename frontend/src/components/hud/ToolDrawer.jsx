@@ -1,26 +1,20 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 export function ToolDrawer({ baseUrl, demoId, isOpen, onClose }) {
     const [tools, setTools] = useState([])
     const [loading, setLoading] = useState(false)
+    const fetchedFor = useRef(null)
 
     useEffect(() => {
-        if (isOpen && tools.length === 0) {
-            setLoading(true)
-            // Fake fetch since we don't know the exact endpoint response format yet
-            // Replace with actual: fetch(`${baseUrl}/agent/${demoId}/tools`)
-            setTimeout(() => {
-                setTools([
-                    { name: 'search_flights', description: 'Search for live flights by origin, destination, and dates.' },
-                    { name: 'book_hotel', description: 'Complete a booking transaction for a specific hotel ID.' },
-                    { name: 'get_weather_forecast', description: 'Retrieve 5-day weather data for a location.' },
-                    { name: 'calendar_availability', description: 'Check user calendar for trip planning.' }
-                ])
-                setLoading(false)
-            }, 800)
-        }
-    }, [isOpen, tools.length, baseUrl, demoId])
+        if (!isOpen || fetchedFor.current === demoId) return
+        fetchedFor.current = demoId
+        setLoading(true)
+        fetch(`${baseUrl}/agent/${demoId}/tools`)
+            .then(r => r.json())
+            .then(data => { setTools(data.tools || []); setLoading(false) })
+            .catch(() => setLoading(false))
+    }, [isOpen, baseUrl, demoId])
 
     return (
         <>

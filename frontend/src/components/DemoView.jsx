@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { useCustomAgent } from '../hooks/useCustomAgent'
 import { CARD_REGISTRY } from './ComponentRegistry'
 import { ToolCallStamp } from './ToolCallStamp'
@@ -194,6 +196,8 @@ export function DemoView({ demoId, demoConfig, onBack }) {
                                 alignItems: 'center',
                                 fontSize: '13px',
                                 zIndex: 15,
+                                maxWidth: 'calc(100vw - 32px)',
+                                width: 'fit-content'
                             }}
                         >
                             <span style={{
@@ -204,12 +208,23 @@ export function DemoView({ demoId, demoConfig, onBack }) {
                                 fontWeight: 600,
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.05em',
-                                fontSize: '11px'
+                                fontSize: '11px',
+                                flexShrink: 0
                             }}>
                                 {activity.phase}
                             </span>
-                            <span style={{ color: 'var(--text-primary)' }}>{activity.title}</span>
-                            {activity.detail && <span style={{ color: 'var(--text-muted)' }}>{activity.detail}</span>}
+                            <span style={{
+                                color: 'var(--text-primary)',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                            }}>{activity.title}</span>
+                            {activity.detail && <span style={{
+                                color: 'var(--text-muted)',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                            }}>{activity.detail}</span>}
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -252,7 +267,28 @@ export function DemoView({ demoId, demoConfig, onBack }) {
                                     lineHeight: 1.7,
                                 }}
                             >
-                                {msg.content}
+                                {msg.role === 'assistant' ? (
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkGfm]}
+                                        components={{
+                                            p: ({ children }) => <p style={{ margin: '0 0 8px 0' }}>{children}</p>,
+                                            strong: ({ children }) => <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{children}</strong>,
+                                            h1: ({ children }) => <h1 style={{ fontSize: '20px', fontWeight: 600, margin: '12px 0 8px', color: 'var(--text-primary)' }}>{children}</h1>,
+                                            h2: ({ children }) => <h2 style={{ fontSize: '17px', fontWeight: 600, margin: '12px 0 6px', color: 'var(--text-primary)' }}>{children}</h2>,
+                                            h3: ({ children }) => <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '10px 0 4px', color: 'var(--text-primary)' }}>{children}</h3>,
+                                            h4: ({ children }) => <h4 style={{ fontSize: '14px', fontWeight: 600, margin: '8px 0 4px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{children}</h4>,
+                                            ul: ({ children }) => <ul style={{ paddingLeft: '20px', margin: '4px 0 8px' }}>{children}</ul>,
+                                            ol: ({ children }) => <ol style={{ paddingLeft: '20px', margin: '4px 0 8px' }}>{children}</ol>,
+                                            li: ({ children }) => <li style={{ margin: '4px 0' }}>{children}</li>,
+                                            code: ({ children }) => <code style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '12px', background: 'rgba(255,255,255,0.08)', padding: '1px 5px', borderRadius: '4px' }}>{children}</code>,
+                                            hr: () => <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.08)', margin: '12px 0' }} />,
+                                        }}
+                                    >
+                                        {msg.content}
+                                    </ReactMarkdown>
+                                ) : (
+                                    msg.content
+                                )}
                             </div>
                         )
                     })}

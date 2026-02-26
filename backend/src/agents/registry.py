@@ -25,6 +25,7 @@ from typing import Any
 
 import aiosqlite
 from langchain_core.callbacks.manager import adispatch_custom_event
+from langchain_core.runnables.config import var_child_runnable_config
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
@@ -67,6 +68,7 @@ _TOOL_CARDS: dict[str, str | None] = {
     "checkout":               "checkout_card",
     # Chef
     "search_recipes":         "recipe_card",
+    "create_recipe":          "recipe_card",
     "get_nutritional_info":   "nutrition_card",
     "plan_meals":             "meal_plan_card",
     "generate_shopping_list": "shopping_list_card",
@@ -101,6 +103,7 @@ _TOOL_ACTIVITIES: dict[str, tuple[str, str]] = {
     "view_cart":              ("Checking cart",            "search"),
     "checkout":               ("Processing order",         "done"),
     "search_recipes":         ("Searching recipes",        "search"),
+    "create_recipe":          ("Composing recipe",         "compute"),
     "get_nutritional_info":   ("Getting nutrition info",   "compute"),
     "plan_meals":             ("Building meal plan",       "compute"),
     "generate_shopping_list": ("Building shopping list",   "compute"),
@@ -163,6 +166,20 @@ def _wrap_tool(tool: Any) -> Any:
     tool_name = tool.name
 
     async def _wrapped(**kwargs: Any) -> Any:
+        # ── 0. Inject LangGraph thread_id so MCP servers isolate sessions ─────
+        # Without this the agent omits thread_id and all sessions collide on
+        # the "default" key, causing check_answer / add_to_cart etc. to fail
+        # with "no active session" errors across turns.
+        if kwargs.get("thread_id", "default") == "default":
+            try:
+                config = var_child_runnable_config.get(None)
+                if config:
+                    lg_tid = config.get("configurable", {}).get("thread_id")
+                    if lg_tid:
+                        kwargs["thread_id"] = lg_tid
+            except Exception:
+                pass
+
         # ── 1. Pre-call activity event ────────────────────────────────────────
         activity = _TOOL_ACTIVITIES.get(tool_name)
         if activity:
