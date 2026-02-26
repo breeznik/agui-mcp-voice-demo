@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>agui-mcp-voice-demo</title>
+    <link rel="icon" href="data:," />
+
+    <!-- Fonts: Space Grotesk (UI) + JetBrains Mono (tool args / JSON) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!--
+      SVG filter bank — injected once, referenced by CSS filter: url(#grain) etc.
+      These are invisible elements; they only define filter primitives.
+    -->
+    <svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+      <defs>
+        <!-- Sandpaper grain texture -->
+        <filter id="grain" x="0%" y="0%" width="100%" height="100%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.65"
+            numOctaves="3"
+            stitchTiles="stitch"
+            result="noise"
+          />
+          <feColorMatrix type="saturate" values="0" in="noise" />
+        </filter>
+
+        <!-- Plasma orb distortion (used on the voice call orb) -->
+        <filter id="plasma" x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence
+            type="turbulence"
+            baseFrequency="0.015 0.01"
+            numOctaves="2"
+            seed="2"
+            result="turb"
+          >
+            <animate
+              attributeName="baseFrequency"
+              from="0.015 0.01"
+              to="0.022 0.016"
+              dur="4s"
+              repeatCount="indefinite"
+              calcMode="spline"
+              keySplines="0.4 0 0.6 1"
+            />
+          </feTurbulence>
+          <feDisplacementMap in="SourceGraphic" in2="turb" scale="14" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </defs>
+    </svg>
+
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
